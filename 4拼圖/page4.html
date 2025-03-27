@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,22 +13,24 @@
             height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
+            overflow: hidden;
         }
 
         #puzzle-container {
-            width: 500px;  /* 增大拼圖容器的寬度 */
-            height: 500px; /* 增大拼圖容器的高度 */
+            width: 500px;  /* 固定拼圖容器的寬度 */
+            height: 500px; /* 固定拼圖容器的高度 */
             display: flex;
             flex-wrap: wrap;
             border: 2px solid #000;
+            position: relative;
         }
 
         .tile {
-            width: 166px;  /* 增大每個拼圖塊的寬度 */
-            height: 166px; /* 增大每個拼圖塊的高度 */
+            width: 166px;  /* 固定每個拼圖塊的寬度 */
+            height: 166px; /* 固定每個拼圖塊的高度 */
             background-size: 500px 500px; /* 配合拼圖容器大小，調整圖片背景顯示 */
             border: 1px solid #ccc;
-            cursor: grab;
+            cursor: pointer;
             box-sizing: border-box;
         }
 
@@ -44,10 +46,22 @@
             font-size: 1.2em;
             font-weight: bold;
         }
+
+        /* 響應式設計，對於小螢幕做調整 */
+        @media (max-width: 600px) {
+            #puzzle-container {
+                width: 300px; /* 小螢幕上縮小拼圖容器 */
+                height: 300px;
+            }
+
+            .tile {
+                width: 100px;  /* 每個拼圖塊也縮小 */
+                height: 100px;
+            }
+        }
     </style>
 </head>
 <body>
-    <audio id="bg-music" src="您的音樂檔案路徑.mp3" loop></audio>
     <div id="puzzle-container"></div>
     <video id="video-player" controls>
         <source src="my_vedio.mp4" type="video/mp4">
@@ -63,6 +77,7 @@
         const videoPlayer = document.getElementById('video-player');
         let tiles = [];
         let originalOrder = [];
+        let selectedTile = null;
 
         // 頁面加載後自動開始遊戲
         window.onload = function() {
@@ -88,7 +103,7 @@
         function shuffleTiles() {
             for (let i = tiles.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+                [tiles[i], tiles[j]] = [tiles[j], tiles[i]];  // 將拼圖塊隨機打亂
             }
         }
 
@@ -97,32 +112,30 @@
             tiles.forEach((tile, index) => {
                 const tileElement = document.createElement('div');
                 tileElement.classList.add('tile');
-                tileElement.draggable = true;
+                tileElement.dataset.index = index;
 
                 if (tile !== null) {
                     tileElement.style.backgroundImage = `url(${imageSrc})`;
                     tileElement.style.backgroundPosition = `${-(tile % 3) * 166}px ${-Math.floor(tile / 3) * 166}px`; /* 根據新尺寸調整背景位置 */
                 }
 
-                tileElement.dataset.index = index;
-
-                tileElement.ondragstart = (e) => dragStart(e, index);
-                tileElement.ondragover = (e) => e.preventDefault();
-                tileElement.ondrop = (e) => drop(e, index);
+                tileElement.addEventListener('click', () => handleTileClick(index));
 
                 puzzleContainer.appendChild(tileElement);
             });
         }
 
-        function dragStart(e, index) {
-            e.dataTransfer.setData('draggedIndex', index);
-        }
+        function handleTileClick(index) {
+            if (selectedTile === null) {
+                selectedTile = index; // 記錄第一次點擊的拼圖
+            } else {
+                // 交換兩個拼圖的位置
+                [tiles[selectedTile], tiles[index]] = [tiles[index], tiles[selectedTile]];
+                renderPuzzle(); // 重新渲染拼圖
+                selectedTile = null; // 清空已選的拼圖
 
-        function drop(e, index) {
-            const draggedIndex = parseInt(e.dataTransfer.getData('draggedIndex'), 10);
-            [tiles[index], tiles[draggedIndex]] = [tiles[draggedIndex], tiles[index]];
-            renderPuzzle();
-            checkCompletion();
+                checkCompletion(); // 檢查拼圖是否完成
+            }
         }
 
         function checkCompletion() {
