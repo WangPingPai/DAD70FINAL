@@ -21,11 +21,6 @@
             height: 100vh;
             display: none;
         }
-        audio {
-            position: fixed;
-            top: 5px;  /* 將音樂播放控制器移至頁面上方 */
-            left: 5px;
-            z-index: 10;  /* 確保音樂播放器在最上層 */
     </style>
 </head>
 <body>
@@ -37,14 +32,23 @@
     <iframe id="frame4" src="4拼圖/page4.html"></iframe>
 
     <!-- 背景音樂 -->
-    <audio id="bgMusic" controls autoplay loop>
+    <audio id="bgMusic" autoplay loop>
         <source src="your-music-file.mp3" type="audio/mp3">
         你的瀏覽器不支援音樂播放功能。
     </audio>
 
     <script>
         // 設定音量為較小聲
-        document.getElementById('bgMusic').volume = 0.2;  // 設定音量為 0.2 (小聲)
+        const bgMusic = document.getElementById('bgMusic');
+        bgMusic.volume = 0.4;
+
+        // 自動靜音並播放（解決某些瀏覽器的限制）
+        bgMusic.muted = true;
+        bgMusic.play().then(() => {
+            bgMusic.muted = false; // 取消靜音
+        }).catch((error) => {
+            console.error('自動播放失敗：', error);
+        });
 
         // 取得 iframe 元素
         const frame1 = document.getElementById("frame1");
