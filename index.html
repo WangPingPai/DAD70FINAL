@@ -42,13 +42,18 @@
         const bgMusic = document.getElementById('bgMusic');
         bgMusic.volume = 0.4;
 
-        // 自動靜音並播放（解決某些瀏覽器的限制）
-        bgMusic.muted = true;
-        bgMusic.play().then(() => {
-            bgMusic.muted = false; // 取消靜音
-        }).catch((error) => {
-            console.error('自動播放失敗：', error);
-        });
+        // 自動播放背景音樂的函數
+        function playBackgroundMusic() {
+            bgMusic.muted = true;
+            bgMusic.play().then(() => {
+                bgMusic.muted = false; // 取消靜音
+            }).catch((error) => {
+                console.error('背景音樂播放失敗：', error);
+            });
+        }
+
+        // 立即嘗試播放背景音樂
+        playBackgroundMusic();
 
         // 取得 iframe 元素
         const frame1 = document.getElementById("frame1");
@@ -56,14 +61,16 @@
         const frame3 = document.getElementById("frame3");
         const frame4 = document.getElementById("frame4");
 
-        // 初始顯示第一個頁面
+        // 初始顯示第一個頁面並重新嘗試播放背景音樂
         frame1.style.display = "block";
+        playBackgroundMusic();
 
         // 監聽 iframe 內傳來的訊息
         window.addEventListener("message", function(event) {
             if (event.data === 'videoEnded-page1') {
                 frame1.style.display = "none";
                 frame2.style.display = "block";
+                playBackgroundMusic(); // 確保切換頁面時背景音樂仍能播放
             } else if (event.data === 'videoEnded-page2') {
                 frame2.style.display = "none";
                 frame3.style.display = "block";
