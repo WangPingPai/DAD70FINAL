@@ -15,6 +15,10 @@
             align-items: center;
             height: 100vh;
             background-color: #f0f0f0;
+            background-image: url('your-background-image.jpg'); /* 設定背景圖片 */
+            background-size: cover; /* 背景圖片覆蓋整個頁面 */
+            background-position: center; /* 背景圖片居中 */
+            background-repeat: no-repeat; /* 防止背景圖片重複 */
         }
         iframe {
             border: none;
@@ -25,7 +29,7 @@
         .icon {
             width: 100px;
             height: 100px;
-            background-color: #4CAF50;
+            background-color: #9900FF;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -58,7 +62,7 @@
     <script>
         // 設定音量為較小聲
         const bgMusic = document.getElementById('bgMusic');
-        bgMusic.volume = 0.4;
+        bgMusic.volume = 0.1;
 
         // 自動播放背景音樂的函數
         function playBackgroundMusic() {

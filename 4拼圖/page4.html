@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
@@ -7,44 +7,73 @@
   <style>
     body {
       font-family: Arial, sans-serif;
+      margin: 0;
+      overflow: hidden;
+      height: 100vh;
+      background-image: url('game-background.jpg'); /* 遊戲區背景圖片 */
+      background-size: cover; /* 確保背景填滿畫面 */
+      background-position: center; /* 背景居中顯示 */
+    }
+
+    /* 開始畫面 */
+    #start-screen {
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      margin: 0;
-      background-color: #f0f0f0;
-      overflow: hidden;
+      height: 100%;
+      background-image: url('start-background.jpg'); /* 開始畫面的背景圖片 */
+      background-size: cover;
+      background-position: center;
+      color: white;
+      flex-direction: column;
+      text-align: center;
     }
+
+    #start-screen button {
+      padding: 20px 40px;
+      font-size: 24px;
+      color: white;
+      background-color: rgba(0, 0, 0, 0.7);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #start-screen button:hover {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    /* 拼圖容器 */
     #puzzle-container {
       display: flex;
       flex-wrap: wrap;
       position: relative;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       transition: transform 0.3s ease;
+      display: none; /* 遊戲區域隱藏，直到點擊開始遊戲 */
+      background-image: url('game-container-background.jpg'); /* 遊戲區背景圖片 */
+		background-size: cover; /* 確保背景圖片自動調整大小 */
+		background-position: center; /* 確保背景居中顯示 */
     }
-    .tile {
-      background-repeat: no-repeat;
-      background-size: cover;
-      background-position: center;
-      cursor: pointer;
-      box-sizing: border-box;
-      transition: transform 0.2s ease;
-    }
-    .tile:hover {
-      transform: scale(1.05);
-    }
+
+
+
+    /* 遊戲結束後播放影片 */
     video {
       width: 100%;
       height: 100%;
       display: none;
     }
+
+    /* 完成訊息 */
     #message {
       text-align: center;
       margin-top: 20px;
       font-size: 1.2em;
       font-weight: bold;
     }
+
     /* 橫屏模式下拼圖容器縮小70%並置中 */
     @media (orientation: landscape) {
       #puzzle-container {
@@ -57,37 +86,63 @@
   </style>
 </head>
 <body>
-  <!-- 背景音樂 -->
-  <audio id="bg-music" src="your_music.mp3" loop></audio>
-  
+
+  <!-- 開始畫面 -->
+  <div id="start-screen">
+    <button id="start-button">Start</button>
+  </div>
+
   <!-- 拼圖容器 -->
   <div id="puzzle-container"></div>
+
   <!-- 遊戲結束後播放的影片 -->
   <video id="win-video" width="100%" height="auto" controls style="display: none;">
-      <source src="my_video.mp4" type="video/mp4">
-      您的瀏覽器不支援影片播放。
+    <source src="my_video.mp4" type="video/mp4">
+    您的瀏覽器不支援影片播放。
   </video>
-  
+
   <!-- 顯示完成訊息 -->
   <p id="message"></p>
-  
+
   <script>
     const imageSrc = 'front.jpg'; // 請替換為您的圖片路徑
     const puzzleContainer = document.getElementById('puzzle-container');
-    const bgMusic = document.getElementById('bg-music');
+    const startScreen = document.getElementById('start-screen');
+    const bgMusic = new Audio('your_music.mp3'); // 替換為您的背景音樂路徑
     const message = document.getElementById('message');
-    const videoPlayer = document.getElementById('video-player');
+    const videoPlayer = document.getElementById('win-video');
 
     // 拼圖設定，3x3
     const cols = 3;
     const rows = 3;
 
-    // 依圖片原始尺寸及縮放比例計算後的數值
     let imageWidth, imageHeight, tileWidth, tileHeight;
     let oriWidth, oriHeight; // 儲存圖片原始尺寸
     let tiles = [];
     let originalOrder = [];
     let selectedTile = null;
+
+    // 開始遊戲
+    document.getElementById('start-button').addEventListener('click', function() {
+      startScreen.style.display = 'none';  // 隱藏開始畫面
+      puzzleContainer.style.display = 'flex';  // 顯示拼圖遊戲區域
+
+      // 開始背景音樂
+      bgMusic.loop = true;
+      bgMusic.play().catch(e => console.error("背景音樂播放失敗:", e));
+
+      // 初始化拼圖
+      const img = new Image();
+      img.src = imageSrc;
+      img.onload = function() {
+        oriWidth = img.naturalWidth;
+        oriHeight = img.naturalHeight;
+        calculateDimensions();
+        generatePuzzle();
+        shuffleTiles();
+        renderPuzzle();
+      };
+    });
 
     // 根據目前視窗大小計算等比例縮放後的拼圖尺寸
     function calculateDimensions() {
@@ -140,7 +195,7 @@
       }
     }
 
-    // 處理拼圖塊點擊事件：用戶依序選取兩個拼圖塊後執行交換
+    // 處理拼圖塊點擊事件
     function handleTileClick(index) {
       if (selectedTile === null) {
         selectedTile = index;
@@ -157,7 +212,6 @@
       if (tiles.every((tile, index) => tile === originalOrder[index])) {
         message.textContent = "恭喜你完成拼圖！影片即將自動播放。";
         bgMusic.pause();
-        // 直接在用戶點擊事件鏈中呼叫 auto play
         playFullScreenVideo();
       }
     }
@@ -177,28 +231,12 @@
       });
     }
 
-    // 視窗尺寸改變時計算尺寸並重渲染（例如手機橫屏時）
+    // 視窗尺寸改變時計算尺寸並重渲染
     window.onresize = function() {
       calculateDimensions();
       renderPuzzle();
     };
 
-    // 遊戲起始：圖片載入完成後取得原始尺寸，初始化拼圖及背景音樂
-    window.onload = function() {
-      const img = new Image();
-      img.src = imageSrc;
-      img.onload = function() {
-        oriWidth = img.naturalWidth;
-        oriHeight = img.naturalHeight;
-        calculateDimensions();
-        bgMusic.play().catch(e => {
-          console.error("背景音樂播放失敗:", e);
-        });
-        generatePuzzle();
-        shuffleTiles();
-        renderPuzzle();
-      };
-    };
   </script>
 </body>
 </html>

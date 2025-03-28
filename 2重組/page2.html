@@ -16,10 +16,43 @@
             height: 100vh; /* 保證垂直居中 */
             background-color: #f9f9f9; /* 添加背景色以提升視覺效果 */
         }
+        /* 遊戲開始畫面 */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('your-background-image.jpg'); /* 設定背景圖片 */
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        /* 開始按鈕樣式 */
+        #start-button {
+            padding: 20px 40px;
+            font-size: 24px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        #start-button:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
         #scalable-container {
             position: relative;
             transform-origin: center center; /* 將縮放中心設置為容器中間 */
             text-align: center; /* 確保所有文字內容居中 */
+            display: none; /* 遊戲內容預設隱藏 */
         }
         h1 {
             margin-bottom: 5px; /* 縮短標題與段落的間距 */
@@ -106,6 +139,11 @@
     </style>
 </head>
 <body>
+    <!-- 遊戲開始畫面 -->
+    <div id="start-screen">
+        <button id="start-button">Start</button>
+    </div>
+
     <div id="scalable-container">
         <h1>看圖猜字</h1>
 
@@ -128,9 +166,6 @@
         </div>
 
         <p id="result"></p>
-
-        <!-- 背景音樂 -->
-        <audio id="backgroundMusic" src="your-background-music.mp3" autoplay loop></audio>
 
         <!-- 全螢幕影片容器 -->
         <div id="videoContainer">
@@ -193,6 +228,7 @@
                 setTimeout(restartGame, 1000); // 2秒後重新開始遊戲
             }
         }
+
         // 重新啟動遊戲
         function restartGame() {
             playerAnswers = [];
@@ -201,14 +237,19 @@
                 document.getElementById(`slot${i}`).textContent = "";
             }
         }
+
         // 播放通關影片
         function playVictoryVideo() {
             const videoContainer = document.getElementById("videoContainer");
-            videoContainer.style.display = "block";
             const victoryVideo = document.getElementById("victoryVideo");
+
+            // 設定影片音量為 1（最大音量）
+            victoryVideo.volume = 1;  // 你可以調整這個值介於 0 和 1 之間
+
+            videoContainer.style.display = "block";
             victoryVideo.play();
-            
-            // 影片播放結束後，傳送訊息給 index.html
+
+            // 影片播放結束後，隱藏影片容器並重啟遊戲
             victoryVideo.onended = function() {
                 videoContainer.style.display = "none"; // 影片播放結束後隱藏
                 window.parent.postMessage('videoEnded-page2', '*');
@@ -216,7 +257,12 @@
             };
         }
 
-
+        // 開始遊戲的事件監聽器
+        document.getElementById("start-button").addEventListener("click", () => {
+            document.getElementById("start-screen").style.display = "none";  // 隱藏開始畫面
+            document.getElementById("scalable-container").style.display = "block";  // 顯示遊戲畫面
+            scaleContent();  // 調整縮放
+        });
     </script>
 </body>
 </html>

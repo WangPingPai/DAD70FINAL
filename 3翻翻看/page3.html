@@ -6,82 +6,123 @@
     <title>翻牌遊戲</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-image: url('images/background.jpg'); /* 背景圖片 */
-            background-size: cover;
-            background-position: center;
-            margin: 0;
-        }
+			font-family: Arial, sans-serif;
+			margin: 0;
+			height: 100vh; /* 使整個 body 填滿螢幕 */
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
 
-        .game-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4 列 */
-            grid-gap: 10px;
-            width: 100%;
-            max-width: 600px; /* 最大寬度600px，讓卡片不會太大 */
-            margin: 0 auto; /* 使容器居中 */
-        }
+		.start-screen {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-image: url('images/start-background.jpg'); /* 開始畫面背景圖片 */
+			background-size: cover;
+			background-position: center;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
 
-        .card {
-            width: 100%;
-            height: 0;
-            padding-bottom: 100%; /* 使卡片為正方形 */
-            border: 2px solid transparent; /* 卡片邊框透明 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            position: relative;
-            transform: perspective(600px) rotateY(0deg);
-            transform-style: preserve-3d;
-            transition: transform 0.5s;
-        }
+		.start-screen button {
+			padding: 20px 40px;
+			font-size: 24px;
+			color: white;
+			background-color: rgba(0, 0, 0, 0.7);
+			border: none;
+			border-radius: 10px;
+			cursor: pointer;
+			transition: background-color 0.3s;
+		}
 
-        .card.flipped {
-            transform: perspective(600px) rotateY(180deg);
-        }
+		.start-screen button:hover {
+			background-color: rgba(0, 0, 0, 0.5);
+		}
 
-        .card .front,
-        .card .back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            object-fit: contain; /* 保證圖片保持比例並完整顯示，不會裁剪 */
-        }
+		/* 遊戲區背景 */
+		.game-container {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr); /* 4 列 */
+			grid-gap: 10px;
+			width: 100%;
+			height: 100vh; /* 讓遊戲區域佔滿整個視窗高度 */
+			max-width: 100%; /* 讓寬度自適應 */
+			margin: 0;
+			display: none; /* 預設隱藏遊戲區域 */
+			background-image: url('images/game-background.jpg'); /* 遊戲區背景圖片 */
+			background-size: cover; /* 確保背景圖片自動調整大小 */
+			background-position: center; /* 確保背景居中顯示 */
+			
+			/* 在這裡加上 margin-top 或 padding-top 來調整卡片區域的位置 */
+			margin-top: 400px; /* 向下移動遊戲區域 20px */
+			padding-top: 20px; /* 也可以使用 padding-top 移動卡片區域 */
+		}
 
-        .card .front {
-            background-image: url('images/front.jpg'); /* 正面圖片 */
-            background-size: cover; /* 使用 cover 來填滿卡片 */
-            background-position: center; /* 中心對齊 */
-        }
+		.card {
+			width: 100%;
+			height: 0;
+			padding-bottom: 100%; /* 使卡片為正方形 */
+			border: 2px solid transparent; /* 卡片邊框透明 */
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			cursor: pointer;
+			position: relative;
+			transform: perspective(600px) rotateY(0deg);
+			transform-style: preserve-3d;
+			transition: transform 0.5s;
+		}
 
-        .card .back {
-            background-size: cover; /* 使用 cover 來填滿卡片 */
-            background-position: center; /* 中心對齊 */
-            transform: rotateY(180deg);
-        }
+		.card.flipped {
+			transform: perspective(600px) rotateY(180deg);
+		}
+
+		.card .front,
+		.card .back {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			backface-visibility: hidden;
+			object-fit: contain; /* 保證圖片保持比例並完整顯示，不會裁剪 */
+		}
+
+		.card .front {
+			background-image: url('images/front.jpg'); /* 正面圖片 */
+			background-size: cover;
+			background-position: center;
+		}
+
+		.card .back {
+			background-size: cover;
+			background-position: center;
+			transform: rotateY(180deg);
+		}
 
         @media (max-width: 600px) {
             .game-container {
                 grid-template-columns: repeat(2, 1fr); /* 在手機或窄螢幕上每行顯示2張卡片 */
-                max-width: 100%; /* 最大寬度100%，適應不同屏幕大小 */
+                max-width: 100%;
             }
 
             .card {
-                width: 100%; /* 在小螢幕下卡片寬度為100% */
+                width: 100%;
                 padding-bottom: 100%; /* 保持卡片為正方形 */
             }
         }
     </style>
 </head>
 <body>
+    <!-- 遊戲開始畫面 -->
+    <div class="start-screen" id="startScreen">
+        <button id="startButton">Start</button>
+    </div>
+
     <!-- 遊戲容器 -->
-    <div class="game-container">
+    <div class="game-container" id="gameContainer">
         <!-- 卡片容器將由 JavaScript 動態生成 -->
     </div>
 
@@ -92,7 +133,11 @@
     </video>
 
     <script>
-        const gameContainer = document.querySelector('.game-container');
+        const startButton = document.getElementById('startButton');
+        const startScreen = document.getElementById('startScreen');
+        const gameContainer = document.getElementById('gameContainer');
+        const winVideo = document.getElementById('win-video');
+
         const cardValues = [
             '1', '1', '2', '2', 
             '3', '3', '4', '4'
@@ -100,20 +145,26 @@
         let flippedCards = [];
         let matchedCards = [];
 
-        // 隨機打亂卡片
-        cardValues.sort(() => 0.5 - Math.random());
+        // 點擊開始遊戲按鈕
+        startButton.addEventListener('click', function() {
+            startScreen.style.display = 'none'; // 隱藏開始畫面
+            gameContainer.style.display = 'grid'; // 顯示遊戲區域
+            
+            // 隨機打亂卡片
+            cardValues.sort(() => 0.5 - Math.random());
 
-        // 創建卡片元素並添加到遊戲容器中
-        cardValues.forEach(value => {
-            const card = document.createElement('div');
-            card.classList.add('card');
-            card.innerHTML = ` 
-                <div class="front"></div>
-                <div class="back" style="background-image: url('images/${value}.jpg');"></div>
-            `;
-            card.dataset.value = value;
-            card.addEventListener('click', flipCard);
-            gameContainer.appendChild(card);
+            // 創建卡片元素並添加到遊戲容器中
+            cardValues.forEach(value => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.innerHTML = ` 
+                    <div class="front"></div>
+                    <div class="back" style="background-image: url('images/${value}.jpg');"></div>
+                `;
+                card.dataset.value = value;
+                card.addEventListener('click', flipCard);
+                gameContainer.appendChild(card);
+            });
         });
 
         // 翻牌邏輯
@@ -146,14 +197,10 @@
         // 檢查是否獲勝
         function checkWin() {
             if (matchedCards.length === cardValues.length) {
-                 
                 // 隱藏遊戲區域
                 gameContainer.style.display = 'none';
                 
                 // 顯示並播放影片
-                const winVideo = document.getElementById('win-video');
-                
-                // 設定影片檔名（根據需要設定）
                 const videoFileName = 'b0bbbebf-4209-432e-b7e3-83311fc74d7d'; // 預設檔案名稱
 
                 // 設定影片來源

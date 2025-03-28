@@ -7,15 +7,50 @@
     <style>
         body {
             margin: 0;
-            overflow: hidden; /* 確保沒有滾動條 */
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             background-color: #f4f4f4;
+            position: relative;
         }
-        canvas {
-            display: block;
+
+        /* 遊戲開始畫面 */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('your-background-image.jpg'); /* 設定背景圖片 */
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
         }
+
+        /* 開始按鈕樣式 */
+		#start-button {
+			padding: 40px 60px;  /* 控制按鈕內邊距，讓文字適當顯示 */
+			font-size: 24px;  /* 設置字體大小 */
+			background-color: rgba(0, 0, 0, 0.6);
+			color: white;
+			border: none;
+			border-radius: 10px;
+			cursor: pointer;
+			transition: background-color 0.2s ease-in-out;
+			display: flex;  /* 使用 flexbox 來居中對齊文字 */
+			align-items: center;  /* 垂直居中對齊文字 */
+			justify-content: center;  /* 水平居中對齊文字 */
+			text-align: center;  /* 確保文字居中 */
+		}
+
+		#start-button:hover {
+			background-color: rgba(0, 0, 0, 0.8);
+		}
+        /* 控制按鈕 */
         #controls {
             position: fixed;
             bottom: 20px;
@@ -35,9 +70,16 @@
             cursor: pointer;
             transition: background-color 0.1s ease-in-out;
         }
+
         button:active {
             background-color: #bbb;
         }
+
+        canvas {
+            display: block;
+        }
+
+        /* 全螢幕影片 */
         #fullscreen-video {
             display: none;
             position: fixed;
@@ -51,19 +93,29 @@
     </style>
 </head>
 <body>
+    <!-- 遊戲開始畫面 -->
+    <div id="start-screen">
+        <button id="start-button">Start</button>
+    </div>
+
+    <!-- 迷宮畫布 -->
     <canvas id="mazeCanvas"></canvas>
+
+    <!-- 控制按鈕 -->
     <div id="controls">
         <button id="left">←</button>
         <button id="up">↑</button>
         <button id="down">↓</button>
         <button id="right">→</button>
     </div>
-    <audio id="backgroundMusic" src="your-audio-url.mp3" loop></audio>
+
     <video id="fullscreen-video" src="your-video-url.mp4" autoplay></video>
+
     <script>
         const canvas = document.getElementById('mazeCanvas');
         const ctx = canvas.getContext('2d');
-        const backgroundMusic = document.getElementById('backgroundMusic');
+        const startScreen = document.getElementById('start-screen');
+        const startButton = document.getElementById('start-button');
         const fullscreenVideo = document.getElementById('fullscreen-video');
 
         const cellSize = 40;
@@ -76,8 +128,7 @@
             ground: 'ground-image-url.jpg',
             exit: 'exit-image-url.png'
         };
-
-        // 定義多個迷宮樣本
+       // 定義多個迷宮樣本
         const mazes = [
             [
                 [0, 1, 0, 0, 0, 0, 0, 0, 0, 2],
@@ -135,7 +186,6 @@
         Promise.all(
             Object.entries(images).map(([key, src]) => loadImage(key, src))
         ).then(() => {
-            backgroundMusic.play();
             resizeCanvas();
             render();
         });
@@ -208,7 +258,6 @@
                 render();
 
                 if (maze[newY][newX] === 2) {
-                    backgroundMusic.pause();
                     fullscreenVideo.style.display = 'block';
                     fullscreenVideo.play();
 
@@ -224,6 +273,14 @@
             drawMaze();
             drawPlayer();
         }
+
+        // 開始遊戲的事件監聽器
+        startButton.addEventListener('click', () => {
+            startScreen.style.display = 'none';  // 隱藏開始畫面
+            canvas.style.display = 'block';      // 顯示遊戲畫布
+            resizeCanvas();                     // 調整畫布大小
+            render();                           // 開始渲染遊戲
+        });
 
         document.getElementById('up').addEventListener('mousedown', () => movePlayer(0, -1));
         document.getElementById('down').addEventListener('mousedown', () => movePlayer(0, 1));
