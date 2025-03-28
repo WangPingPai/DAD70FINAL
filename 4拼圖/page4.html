@@ -17,21 +17,24 @@
         }
 
         #puzzle-container {
-            width: 500px;  /* 固定拼圖容器的寬度 */
-            height: 500px; /* 固定拼圖容器的高度 */
             display: flex;
             flex-wrap: wrap;
-            border: 2px solid #000;
             position: relative;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease; * 增加平滑效果 *
         }
 
         .tile {
-            width: 166px;  /* 固定每個拼圖塊的寬度 */
-            height: 166px; /* 固定每個拼圖塊的高度 */
-            background-size: 500px 500px; /* 配合拼圖容器大小，調整圖片背景顯示 */
-            border: 1px solid #ccc;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
             cursor: pointer;
             box-sizing: border-box;
+            transition: transform 0.2s ease;
+        }
+
+        .tile:hover {
+            transform: scale(1.05); * 增加拼圖懸停時的流暢縮放效果 *
         }
 
         video {
@@ -47,16 +50,13 @@
             font-weight: bold;
         }
 
-        /* 響應式設計，對於小螢幕做調整 */
-        @media (max-width: 600px) {
+        * 橫屏模式縮小70%並置中 *
+        @media (orientation: landscape) {
             #puzzle-container {
-                width: 300px; /* 小螢幕上縮小拼圖容器 */
-                height: 300px;
-            }
-
-            .tile {
-                width: 100px;  /* 每個拼圖塊也縮小 */
-                height: 100px;
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%) scale(0.7); * 縮小70%並居中 *
             }
         }
     </style>
@@ -65,7 +65,7 @@
     <audio id="bg-music" src="您的音樂檔案路徑.mp3" loop></audio>
     <div id="puzzle-container"></div>
     <video id="video-player" controls>
-        <source src="my_vedio.mp4" type="video/mp4">
+        <source src="my_video.mp4" type="video/mp4">
         您的瀏覽器不支援影片播放。
     </video>
     <p id="message"></p>
@@ -76,17 +76,26 @@
         const bgMusic = document.getElementById('bg-music');
         const message = document.getElementById('message');
         const videoPlayer = document.getElementById('video-player');
+        const imageWidth = 900; // 圖片寬度（替換為您的圖片寬度）
+        const imageHeight = 600; // 圖片高度（替換為您的圖片高度）
+        const cols = 3; // 拼圖列數
+        const rows = 3; // 拼圖行數
+        const tileWidth = imageWidth / cols; // 每個拼圖塊寬度
+        const tileHeight = imageHeight / rows; // 每個拼圖塊高度
+
         let tiles = [];
         let originalOrder = [];
         let selectedTile = null;
 
-        // 頁面加載後自動開始遊戲
         window.onload = function() {
             startGame();
-        }
+        };
 
         function startGame() {
-            bgMusic.play(); // 播放背景音樂
+            puzzleContainer.style.width = `${imageWidth}px`;
+            puzzleContainer.style.height = `${imageHeight}px`;
+            puzzleContainer.style.margin = '0 auto'; // 置中容器
+            bgMusic.play();
             generatePuzzle();
             shuffleTiles();
             renderPuzzle();
@@ -95,16 +104,16 @@
         function generatePuzzle() {
             tiles = [];
             originalOrder = [];
-            for (let i = 0; i < 9; i++) {
-                tiles.push(i); // 建立拼圖編號陣列
-                originalOrder.push(i); // 保存初始正確排列
+            for (let i = 0; i < cols * rows; i++) {
+                tiles.push(i);
+                originalOrder.push(i);
             }
         }
 
         function shuffleTiles() {
             for (let i = tiles.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [tiles[i], tiles[j]] = [tiles[j], tiles[i]];  // 將拼圖塊隨機打亂
+                [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
             }
         }
 
@@ -113,39 +122,40 @@
             tiles.forEach((tile, index) => {
                 const tileElement = document.createElement('div');
                 tileElement.classList.add('tile');
-                tileElement.dataset.index = index;
+                tileElement.style.width = `${tileWidth}px`;
+                tileElement.style.height = `${tileHeight}px`;
 
                 if (tile !== null) {
+                    const x = -(tile % cols) * tileWidth;
+                    const y = -Math.floor(tile / cols) * tileHeight;
                     tileElement.style.backgroundImage = `url(${imageSrc})`;
-                    tileElement.style.backgroundPosition = `${-(tile % 3) * 166}px ${-Math.floor(tile / 3) * 166}px`; /* 根據新尺寸調整背景位置 */
+                    tileElement.style.backgroundSize = `${imageWidth}px ${imageHeight}px`;
+                    tileElement.style.backgroundPosition = `${x}px ${y}px`;
                 }
 
                 tileElement.addEventListener('click', () => handleTileClick(index));
-
                 puzzleContainer.appendChild(tileElement);
             });
         }
 
         function handleTileClick(index) {
             if (selectedTile === null) {
-                selectedTile = index; // 記錄第一次點擊的拼圖
+                selectedTile = index;
             } else {
-                // 交換兩個拼圖的位置
                 [tiles[selectedTile], tiles[index]] = [tiles[index], tiles[selectedTile]];
-                renderPuzzle(); // 重新渲染拼圖
-                selectedTile = null; // 清空已選的拼圖
-
-                checkCompletion(); // 檢查拼圖是否完成
+                renderPuzzle();
+                selectedTile = null;
+                checkCompletion();
             }
         }
 
         function checkCompletion() {
             if (tiles.every((tile, index) => tile === originalOrder[index])) {
                 message.textContent = '恭喜你完成拼圖！即將播放影片。';
-                bgMusic.pause(); // 完成時停止背景音樂
+                bgMusic.pause();
                 setTimeout(() => {
-                    playFullScreenVideo(); // 播放全螢幕影片
-                }, 1000); // 2 秒後播放影片
+                    playFullScreenVideo();
+                }, 1000);
             }
         }
 
@@ -153,9 +163,9 @@
             videoPlayer.style.display = 'block';
             const requestFullScreen = videoPlayer.requestFullscreen || videoPlayer.webkitRequestFullscreen || videoPlayer.mozRequestFullScreen || videoPlayer.msRequestFullscreen;
             if (requestFullScreen) {
-                requestFullScreen.call(videoPlayer); // 進入全螢幕模式
+                requestFullScreen.call(videoPlayer);
             }
-            videoPlayer.play(); // 播放影片
+            videoPlayer.play();
         }
     </script>
 </body>
