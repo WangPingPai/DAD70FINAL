@@ -1,173 +1,174 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>翻牌遊戲</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-image: url('images/background.jpg'); /* 背景圖片 */
-            background-size: cover;
-            background-position: center;
-            margin: 0;
-        }
-
-        .game-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4 列 */
-            grid-gap: 10px;
-            width: 100%;
-            max-width: 600px; /* 最大寬度600px，讓卡片不會太大 */
-            margin: 0 auto; /* 使容器居中 */
-        }
-
-        .card {
-            width: 100%;
-            height: 0;
-            padding-bottom: 100%; /* 使卡片為正方形 */
-            border: 2px solid transparent; /* 卡片邊框透明 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            position: relative;
-            transform: perspective(600px) rotateY(0deg);
-            transform-style: preserve-3d;
-            transition: transform 0.5s;
-        }
-
-        .card.flipped {
-            transform: perspective(600px) rotateY(180deg);
-        }
-
-        .card .front,
-        .card .back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            object-fit: contain; /* 保證圖片保持比例並完整顯示，不會裁剪 */
-        }
-
-        .card .front {
-            background-image: url('images/front.jpg'); /* 正面圖片 */
-            background-size: cover; /* 使用 cover 來填滿卡片 */
-            background-position: center; /* 中心對齊 */
-        }
-
-        .card .back {
-            background-size: cover; /* 使用 cover 來填滿卡片 */
-            background-position: center; /* 中心對齊 */
-            transform: rotateY(180deg);
-        }
-
-        @media (max-width: 600px) {
-            .game-container {
-                grid-template-columns: repeat(2, 1fr); /* 在手機或窄螢幕上每行顯示2張卡片 */
-                max-width: 100%; /* 最大寬度100%，適應不同屏幕大小 */
-            }
-
-            .card {
-                width: 100%; /* 在小螢幕下卡片寬度為100% */
-                padding-bottom: 100%; /* 保持卡片為正方形 */
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>拼圖遊戲 + 自動播放影片</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0f0f0;
+    }
+    /* 拼圖容器（尺寸會動態依據圖片及視窗計算） */
+    #puzzle-container {
+      position: relative;
+      margin: 0 auto;
+    }
+    /* 每個拼圖塊 */
+    .tile {
+      position: absolute;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      cursor: pointer;
+      /* 背景圖片將顯示拼圖區塊對應的部分 */
+    }
+    /* 隱藏影片（初始狀態） */
+    video {
+      width: 100%;
+      max-width: 800px;
+      display: none;
+      margin: 0 auto;
+    }
+  </style>
 </head>
 <body>
-    <!-- 遊戲容器 -->
-    <div class="game-container">
-        <!-- 卡片容器將由 JavaScript 動態生成 -->
-    </div>
+  <!-- 拼圖容器 -->
+  <div id="puzzle-container"></div>
 
-    <!-- 遊戲結束後播放的影片 (新增 muted 與 playsinline 屬性以利自動播放) -->
-    <video id="win-video" width="100%" height="auto" controls muted playsinline style="display: none;">
-        <source src="movie/b0bbbebf-4209-432e-b7e3-83311fc74d7d.mp4" type="video/mp4">
-        您的瀏覽器不支援影片播放。
-    </video>
+  <!-- 遊戲結束後自動播放影片 (加入 muted 與 playsinline 可提高自動播放成功率) -->
+  <video id="video-player" controls muted playsinline>
+    <source src="movie/your_video.mp4" type="video/mp4">
+    您的瀏覽器不支援影片播放。
+  </video>
 
-    <script>
-        const gameContainer = document.querySelector('.game-container');
-        const cardValues = [
-            '1', '1', '2', '2', 
-            '3', '3', '4', '4'
-        ];
-        let flippedCards = [];
-        let matchedCards = [];
+  <script>
+    // 設定參數：請將 imageSrc 換成你用於拼圖的圖片檔案路徑
+    const imageSrc = 'images/your_image.jpg';
+    const puzzleContainer = document.getElementById('puzzle-container');
+    const videoPlayer = document.getElementById('video-player');
 
-        // 隨機打亂卡片
-        cardValues.sort(() => 0.5 - Math.random());
+    // 拼圖設定（例如：3 x 3 拼圖）
+    const cols = 3;
+    const rows = 3;
+    let imageWidth, imageHeight, tileWidth, tileHeight;
+    let tiles = [];
+    let originalOrder = [];
+    let selectedTile = null;
 
-        // 創建卡片元素並添加到遊戲容器中
-        cardValues.forEach(value => {
-            const card = document.createElement('div');
-            card.classList.add('card');
-            card.innerHTML = ` 
-                <div class="front"></div>
-                <div class="back" style="background-image: url('images/${value}.jpg');"></div>
-            `;
-            card.dataset.value = value;
-            card.addEventListener('click', flipCard);
-            gameContainer.appendChild(card);
+    // 初始化遊戲：讀取圖片、計算尺寸、建立、打亂及渲染拼圖
+    function initGame() {
+      const img = new Image();
+      img.src = imageSrc;
+      img.onload = function(){
+        // 取得圖片原始尺寸
+        const oriWidth = img.naturalWidth;
+        const oriHeight = img.naturalHeight;
+        
+        // 計算縮放比例：使拼圖尺寸不超過視窗的 90%
+        const maxWidth = window.innerWidth * 0.9;
+        const maxHeight = window.innerHeight * 0.9;
+        const scale = Math.min(maxWidth / oriWidth, maxHeight / oriHeight, 1);
+        
+        imageWidth = oriWidth * scale;
+        imageHeight = oriHeight * scale;
+        tileWidth = imageWidth / cols;
+        tileHeight = imageHeight / rows;
+        
+        // 設定拼圖容器尺寸
+        puzzleContainer.style.width = imageWidth + "px";
+        puzzleContainer.style.height = imageHeight + "px";
+        
+        // 建立拼圖資料
+        generatePuzzle();
+        shuffleTiles();
+        renderPuzzle();
+      }
+    }
+
+    // 建立包含正確排序的陣列 (原始順序)
+    function generatePuzzle() {
+      tiles = [];
+      originalOrder = [];
+      for (let i = 0; i < cols * rows; i++) {
+        tiles.push(i);
+        originalOrder.push(i);
+      }
+    }
+
+    // 使用 Fisher-Yates 洗牌法隨機打亂拼圖順序
+    function shuffleTiles() {
+      for (let i = tiles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+      }
+    }
+
+    // 渲染拼圖，每個拼圖塊依據其對應背景位置顯示圖片局部內容
+    function renderPuzzle() {
+      puzzleContainer.innerHTML = "";
+      tiles.forEach((tile, index) => {
+        const tileElement = document.createElement('div');
+        tileElement.classList.add('tile');
+        tileElement.style.width = tileWidth + "px";
+        tileElement.style.height = tileHeight + "px";
+
+        // 計算每個拼圖塊在容器中的位置（根據索引）
+        const posX = (index % cols) * tileWidth;
+        const posY = Math.floor(index / cols) * tileHeight;
+        tileElement.style.left = posX + "px";
+        tileElement.style.top = posY + "px";
+
+        // 設定背景，依據 tile 數值計算原圖中對應位置
+        const bgX = -(tile % cols) * tileWidth;
+        const bgY = -Math.floor(tile / cols) * tileHeight;
+        tileElement.style.backgroundImage = `url(${imageSrc})`;
+        tileElement.style.backgroundSize = `${imageWidth}px ${imageHeight}px`;
+        tileElement.style.backgroundPosition = `${bgX}px ${bgY}px`;
+        
+        tileElement.addEventListener('click', () => {
+          handleTileClick(index);
         });
+        puzzleContainer.appendChild(tileElement);
+      });
+    }
 
-        // 翻牌邏輯
-        function flipCard() {
-            if (flippedCards.length < 2 && !this.classList.contains('flipped')) {
-                this.classList.add('flipped');
-                flippedCards.push(this);
+    // 選取拼圖塊並交換位置
+    function handleTileClick(index) {
+      if (selectedTile === null) {
+        selectedTile = index;
+      } else {
+        [tiles[selectedTile], tiles[index]] = [tiles[index], tiles[selectedTile]];
+        selectedTile = null;
+        renderPuzzle();
+        checkCompletion();
+      }
+    }
 
-                if (flippedCards.length === 2) {
-                    setTimeout(checkMatch, 1000);
-                }
-            }
-        }
+    // 檢查是否完成拼圖：若每個位置的數值均對應原始順序則完成拼圖
+    function checkCompletion() {
+      if (tiles.every((tile, index) => tile === originalOrder[index])) {
+        // 拼圖完成：隱藏拼圖容器...
+        puzzleContainer.style.display = "none";
+        // ...顯示影片並自動播放
+        videoPlayer.style.display = "block";
+        videoPlayer.play().catch(error => {
+          console.error("影片播放失敗:", error);
+        });
+      }
+    }
 
-        // 檢查是否匹配
-        function checkMatch() {
-            const [card1, card2] = flippedCards;
-            if (card1.dataset.value === card2.dataset.value) {
-                matchedCards.push(card1, card2);
-                card1.querySelector('.back').style.backgroundColor = 'lightgreen';
-                card2.querySelector('.back').style.backgroundColor = 'lightgreen';
-            } else {
-                card1.classList.remove('flipped');
-                card2.classList.remove('flipped');
-            }
-            flippedCards = [];
-            checkWin();
-        }
+    // 自動初始化遊戲
+    window.onload = initGame;
 
-        // 檢查是否獲勝
-        function checkWin() {
-            if (matchedCards.length === cardValues.length) {
-                // 隱藏遊戲區域
-                gameContainer.style.display = 'none';
-                
-                // 顯示並自動播放影片
-                const winVideo = document.getElementById('win-video');
-                
-                // 若需要動態指定影片檔名，此區可修改
-                const videoFileName = 'b0bbbebf-4209-432e-b7e3-83311fc74d7d';
-                winVideo.src = `movie/${videoFileName}.mp4`;
-                winVideo.style.display = 'block';
-
-                // 嘗試自動播放影片 (記得影片必須符合自動播放要求，例如必須為靜音)
-                winVideo.play().catch(error => {
-                    console.error("影片播放失敗:", error);
-                });
-                
-                // 當影片播放結束時，發送訊息給 index.html (若有需要)
-                winVideo.onended = function() {
-                    window.parent.postMessage('videoEnded-page3', '*');
-                };
-            }
-        }
-    </script>
+    // 可選：監聽視窗 resize 事件，自動調整拼圖（注意：會重置遊戲）
+    window.onresize = function() {
+      initGame();
+    };
+  </script>
 </body>
 </html>
