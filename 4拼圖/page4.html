@@ -3,94 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>拼圖遊戲 + 自動播放影片</title>
+  <title>全螢幕播放影片的拼圖遊戲</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
+      height: 100vh;
+      margin: 0;
       background-color: #f0f0f0;
+      overflow: hidden;
     }
-    /* 拼圖容器（尺寸會動態依據圖片及視窗計算） */
+
     #puzzle-container {
+      display: flex;
+      flex-wrap: wrap;
       position: relative;
-      margin: 0 auto;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease;
     }
-    /* 每個拼圖塊 */
+
     .tile {
-      position: absolute;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
       cursor: pointer;
-      /* 背景圖片將顯示拼圖區塊對應的部分 */
+      box-sizing: border-box;
+      transition: transform 0.2s ease;
     }
-    /* 隱藏影片（初始狀態） */
+
+    .tile:hover {
+      transform: scale(1.05);
+    }
+
+    /* 影片區：新增 muted 與 playsinline 以利自動播放 */
     video {
       width: 100%;
-      max-width: 800px;
+      height: 100%;
       display: none;
-      margin: 0 auto;
+    }
+
+    #message {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    /* 橫屏模式縮小70%並置中 */
+    @media (orientation: landscape) {
+      #puzzle-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%) scale(0.7);
+      }
     }
   </style>
 </head>
 <body>
-  <!-- 拼圖容器 -->
+  <!-- 背景音樂（檔案路徑保持不變） -->
+  <audio id="bg-music" src="您的音樂檔案路徑.mp3" loop></audio>
+  <!-- 拼圖區域 -->
   <div id="puzzle-container"></div>
-
-  <!-- 遊戲結束後自動播放影片 (加入 muted 與 playsinline 可提高自動播放成功率) -->
+  <!-- 影片區域：保持影片檔案路徑 my_video.mp4，但新增 muted 與 playsinline 屬性 -->
   <video id="video-player" controls muted playsinline>
-    <source src="movie/your_video.mp4" type="video/mp4">
+    <source src="my_video.mp4" type="video/mp4">
     您的瀏覽器不支援影片播放。
   </video>
+  <p id="message"></p>
 
   <script>
-    // 設定參數：請將 imageSrc 換成你用於拼圖的圖片檔案路徑
-    const imageSrc = 'images/your_image.jpg';
+    // 使用原本的圖片檔案路徑（front.jpg）
+    const imageSrc = 'front.jpg';
     const puzzleContainer = document.getElementById('puzzle-container');
+    const bgMusic = document.getElementById('bg-music');
+    const message = document.getElementById('message');
     const videoPlayer = document.getElementById('video-player');
 
-    // 拼圖設定（例如：3 x 3 拼圖）
+    // 設定拼圖參數：圖片尺寸、列數、行數
+    const imageWidth = 900;  // 圖片寬度（請依實際圖片尺寸調整）
+    const imageHeight = 600; // 圖片高度（請依實際圖片尺寸調整）
     const cols = 3;
     const rows = 3;
-    let imageWidth, imageHeight, tileWidth, tileHeight;
+    const tileWidth = imageWidth / cols;
+    const tileHeight = imageHeight / rows;
+
     let tiles = [];
     let originalOrder = [];
     let selectedTile = null;
 
-    // 初始化遊戲：讀取圖片、計算尺寸、建立、打亂及渲染拼圖
-    function initGame() {
-      const img = new Image();
-      img.src = imageSrc;
-      img.onload = function(){
-        // 取得圖片原始尺寸
-        const oriWidth = img.naturalWidth;
-        const oriHeight = img.naturalHeight;
-        
-        // 計算縮放比例：使拼圖尺寸不超過視窗的 90%
-        const maxWidth = window.innerWidth * 0.9;
-        const maxHeight = window.innerHeight * 0.9;
-        const scale = Math.min(maxWidth / oriWidth, maxHeight / oriHeight, 1);
-        
-        imageWidth = oriWidth * scale;
-        imageHeight = oriHeight * scale;
-        tileWidth = imageWidth / cols;
-        tileHeight = imageHeight / rows;
-        
-        // 設定拼圖容器尺寸
-        puzzleContainer.style.width = imageWidth + "px";
-        puzzleContainer.style.height = imageHeight + "px";
-        
-        // 建立拼圖資料
-        generatePuzzle();
-        shuffleTiles();
-        renderPuzzle();
-      }
+    window.onload = function() {
+      startGame();
+    };
+
+    function startGame() {
+      // 設定拼圖容器尺寸與置中
+      puzzleContainer.style.width = `${imageWidth}px`;
+      puzzleContainer.style.height = `${imageHeight}px`;
+      puzzleContainer.style.margin = '0 auto';
+      // 播放背景音樂
+      bgMusic.play().catch(e => console.error("背景音樂播放失敗:", e));
+      generatePuzzle();
+      shuffleTiles();
+      renderPuzzle();
     }
 
-    // 建立包含正確排序的陣列 (原始順序)
     function generatePuzzle() {
       tiles = [];
       originalOrder = [];
@@ -100,75 +119,75 @@
       }
     }
 
-    // 使用 Fisher-Yates 洗牌法隨機打亂拼圖順序
     function shuffleTiles() {
+      // 使用 Fisher-Yates 洗牌法
       for (let i = tiles.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
       }
     }
 
-    // 渲染拼圖，每個拼圖塊依據其對應背景位置顯示圖片局部內容
     function renderPuzzle() {
-      puzzleContainer.innerHTML = "";
+      puzzleContainer.innerHTML = '';
       tiles.forEach((tile, index) => {
         const tileElement = document.createElement('div');
         tileElement.classList.add('tile');
-        tileElement.style.width = tileWidth + "px";
-        tileElement.style.height = tileHeight + "px";
-
-        // 計算每個拼圖塊在容器中的位置（根據索引）
-        const posX = (index % cols) * tileWidth;
-        const posY = Math.floor(index / cols) * tileHeight;
-        tileElement.style.left = posX + "px";
-        tileElement.style.top = posY + "px";
-
-        // 設定背景，依據 tile 數值計算原圖中對應位置
-        const bgX = -(tile % cols) * tileWidth;
-        const bgY = -Math.floor(tile / cols) * tileHeight;
-        tileElement.style.backgroundImage = `url(${imageSrc})`;
-        tileElement.style.backgroundSize = `${imageWidth}px ${imageHeight}px`;
-        tileElement.style.backgroundPosition = `${bgX}px ${bgY}px`;
-        
-        tileElement.addEventListener('click', () => {
-          handleTileClick(index);
-        });
+        tileElement.style.width = `${tileWidth}px`;
+        tileElement.style.height = `${tileHeight}px`;
+        if (tile !== null) {
+          // 計算每塊在背景圖中的位置
+          const x = -(tile % cols) * tileWidth;
+          const y = -Math.floor(tile / cols) * tileHeight;
+          tileElement.style.backgroundImage = `url(${imageSrc})`;
+          tileElement.style.backgroundSize = `${imageWidth}px ${imageHeight}px`;
+          tileElement.style.backgroundPosition = `${x}px ${y}px`;
+        }
+        tileElement.addEventListener('click', () => handleTileClick(index));
         puzzleContainer.appendChild(tileElement);
       });
     }
 
-    // 選取拼圖塊並交換位置
     function handleTileClick(index) {
       if (selectedTile === null) {
         selectedTile = index;
       } else {
         [tiles[selectedTile], tiles[index]] = [tiles[index], tiles[selectedTile]];
-        selectedTile = null;
         renderPuzzle();
+        selectedTile = null;
         checkCompletion();
       }
     }
 
-    // 檢查是否完成拼圖：若每個位置的數值均對應原始順序則完成拼圖
+    // 當拼圖完成後執行，自動隱藏拼圖並播放影片
     function checkCompletion() {
       if (tiles.every((tile, index) => tile === originalOrder[index])) {
-        // 拼圖完成：隱藏拼圖容器...
-        puzzleContainer.style.display = "none";
-        // ...顯示影片並自動播放
-        videoPlayer.style.display = "block";
-        videoPlayer.play().catch(error => {
-          console.error("影片播放失敗:", error);
-        });
+        message.textContent = '恭喜你完成拼圖！即將播放影片。';
+        bgMusic.pause();
+        // 略微延遲後嘗試自動撥放影片
+        setTimeout(() => {
+          playFullScreenVideo();
+        }, 1000);
       }
     }
 
-    // 自動初始化遊戲
-    window.onload = initGame;
-
-    // 可選：監聽視窗 resize 事件，自動調整拼圖（注意：會重置遊戲）
-    window.onresize = function() {
-      initGame();
-    };
+    function playFullScreenVideo() {
+      // 隱藏拼圖容器
+      puzzleContainer.style.display = "none";
+      // 顯示影片
+      videoPlayer.style.display = "block";
+      // 嘗試以全螢幕模式播放（若支援的話）
+      const requestFullScreen = videoPlayer.requestFullscreen ||
+                                videoPlayer.webkitRequestFullscreen ||
+                                videoPlayer.mozRequestFullScreen ||
+                                videoPlayer.msRequestFullscreen;
+      if (requestFullScreen) {
+        requestFullScreen.call(videoPlayer);
+      }
+      // 自動撥放影片
+      videoPlayer.play().catch(error => {
+        console.error("影片播放失敗:", error);
+      });
+    }
   </script>
 </body>
 </html>
