@@ -10,6 +10,7 @@
             margin: 0;
             padding: 0;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -21,9 +22,26 @@
             height: 100vh;
             display: none;
         }
+        .icon {
+            width: 100px;
+            height: 100px;
+            background-color: #4CAF50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: white;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+
+    <!-- 圖示 -->
+    <div id="startIcon" class="icon">開始</div>
 
     <!-- 用於顯示 HTML 頁面的區塊 -->
     <iframe id="frame1" src="1迷宮/page1.html"></iframe>
@@ -52,25 +70,25 @@
             });
         }
 
-        // 立即嘗試播放背景音樂
-        playBackgroundMusic();
-
-        // 取得 iframe 元素
+        // 取得 iframe 和圖示元素
         const frame1 = document.getElementById("frame1");
         const frame2 = document.getElementById("frame2");
         const frame3 = document.getElementById("frame3");
         const frame4 = document.getElementById("frame4");
+        const startIcon = document.getElementById("startIcon");
 
-        // 初始顯示第一個頁面並重新嘗試播放背景音樂
-        frame1.style.display = "block";
-        playBackgroundMusic();
+        // 點擊圖示進入 page1 並播放背景音樂
+        startIcon.addEventListener("click", () => {
+            startIcon.style.display = "none"; // 隱藏圖示
+            frame1.style.display = "block"; // 顯示第一個頁面
+            playBackgroundMusic(); // 播放背景音樂
+        });
 
         // 監聽 iframe 內傳來的訊息
         window.addEventListener("message", function(event) {
             if (event.data === 'videoEnded-page1') {
                 frame1.style.display = "none";
                 frame2.style.display = "block";
-                playBackgroundMusic(); // 確保切換頁面時背景音樂仍能播放
             } else if (event.data === 'videoEnded-page2') {
                 frame2.style.display = "none";
                 frame3.style.display = "block";
